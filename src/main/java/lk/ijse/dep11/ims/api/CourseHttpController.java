@@ -5,6 +5,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import lk.ijse.dep11.ims.to.CourseTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.annotation.PreDestroy;
 import java.sql.*;
@@ -32,6 +33,7 @@ public class CourseHttpController {
     }
 
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping(produces = "application/json",consumes = "application/json")
     public CourseTO createCourse(@RequestBody CourseTO courseTO){
 
@@ -52,12 +54,32 @@ public class CourseHttpController {
 
 
 
-    @PatchMapping("/{id}")
-    public void updateCourse(){
-        System.out.println("updateCourse()");
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PatchMapping(value="/{id}",consumes = "application/json")
+    public void updateCourse(@PathVariable int id,@RequestBody CourseTO courseTO){
+
+        try (Connection connection = pool.getConnection()) {
+            PreparedStatement pstmExist = connection.prepareStatement("SELECT * FROM course WHERE id=?");
+            pstmExist.setInt(1,id);
+
+            if(!pstmExist.executeQuery().next()){
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Course are not Match");
+            }
+
+            PreparedStatement stm = connection.prepareStatement("UPDATE course SET name=?, duration_in_months=? WHERE id=?");
+            stm.setString(1,courseTO.getName());
+            stm.setInt(2,courseTO.getDurationInMonths());
+            stm.setInt(3,id);
+            stm.executeUpdate();
+
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping(value = "/{id}")
     public void deleteCourse(){
         System.out.println("deleteCourse()");
 
