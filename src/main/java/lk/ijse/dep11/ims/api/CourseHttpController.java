@@ -34,7 +34,6 @@ public class CourseHttpController {
         pool.close();
     }
 
-
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping(produces = "application/json",consumes = "application/json")
     public CourseTO createCourse(@RequestBody CourseTO courseTO){
@@ -67,14 +66,11 @@ public class CourseHttpController {
             if(!pstmExist.executeQuery().next()){
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Course are not Match");
             }
-
             PreparedStatement stm = connection.prepareStatement("UPDATE course SET name=?, duration_in_months=? WHERE id=?");
             stm.setString(1,courseTO.getName());
             stm.setInt(2,courseTO.getDurationInMonths());
             stm.setInt(3,id);
             stm.executeUpdate();
-
-
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -121,10 +117,24 @@ public class CourseHttpController {
         }
 
     }
-
     @GetMapping
-    public void getAllDetails(){
-        System.out.println("getAllDetails()");
+    public LinkedList<CourseTO> getAllDetails(){
+
+        LinkedList<CourseTO> courseList = new LinkedList<>();
+
+        try (Connection connection = pool.getConnection()) {
+            Statement stm = connection.createStatement();
+            ResultSet rst = stm.executeQuery("SELECT * FROM course WHERE id");
+
+            while (rst.next())
+            {
+                courseList.add(new CourseTO(rst.getInt("id"),rst.getString("name"),rst.getInt("duration_in_months")));
+            }
+            return courseList;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
