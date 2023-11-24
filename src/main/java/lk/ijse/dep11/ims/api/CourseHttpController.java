@@ -79,9 +79,23 @@ public class CourseHttpController {
 
     }
 
-    @DeleteMapping(value = "/{id}")
-    public void deleteCourse(){
-        System.out.println("deleteCourse()");
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @DeleteMapping("/{id}")
+    public void deleteCourse(@PathVariable int id){
+
+        try (Connection connection = pool.getConnection()) {
+            PreparedStatement pstmExist = connection.prepareStatement("SELECT * FROM course WHERE id=? ");
+            pstmExist.setInt(1,id);
+            if(!pstmExist.executeQuery().next()){
+                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Course name is Mismatch");
+            }
+            PreparedStatement pstm = connection.prepareStatement("DELETE FROM course WHERE id=?");
+            pstm.setInt(1,id);
+            pstm.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
 
     }
 
