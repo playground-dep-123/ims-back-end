@@ -9,6 +9,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import javax.annotation.PreDestroy;
 import java.sql.*;
+import java.util.LinkedList;
+import java.util.List;
 
 @CrossOrigin
 @RestController
@@ -99,9 +101,25 @@ public class CourseHttpController {
 
     }
 
-    @GetMapping("/{id}")
-    public void getCourseDetails(){
-        System.out.println("getCourseDetails()");
+    @GetMapping( value = "/{id}",produces = "application/json")
+    public CourseTO getCourseDetails(@PathVariable int id){
+        try (Connection connection = pool.getConnection()) {
+            PreparedStatement pstm = connection.prepareStatement("SELECT * from course where id=?");
+            pstm.setInt(1,id);
+            ResultSet rst = pstm.executeQuery();
+            if((rst.next())){
+                int cid=rst.getInt("id");
+                String name=rst.getString("name");
+                int duration=rst.getInt("duration_in_months");
+                return new CourseTO(cid,name,duration);
+            }else {
+                throw new ResponseStatusException(HttpStatus.NO_CONTENT,"Course can not Find");
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @GetMapping
